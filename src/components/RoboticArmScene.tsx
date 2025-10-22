@@ -6,7 +6,7 @@ import { useControls } from "leva";
 // Simple 3-joint robotic arm
 function RoboticArm({ t, points }: { t: number; points: [number, number, number][] }) {
   // Calculate spline
-  const curve = new CatmullRomCurve3(points.map((p) => new Vector3(...p)));
+  const curve = new CatmullRomCurve3(points.map((p) => new Vector3(...p))); // Create spline curve ***
   const pos = curve.getPoint(t);
 
   // For demo: 3 links, each 1.5 units

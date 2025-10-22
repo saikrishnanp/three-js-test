@@ -38,10 +38,10 @@ const BuildingScene = () => {
     );
     const animate = () => {
       frame++;
-      const t = Math.min(frame / 30, 1);
-      camera.position.lerpVectors(start, end, t);
-      camera.lookAt(...targetPos);
-      if (t < 1) requestAnimationFrame(animate);
+      const t = Math.min(frame / 30, 1);  // 30 frames animation
+      camera.position.lerpVectors(start, end, t); // Linear interpolation ***
+      camera.lookAt(...targetPos); // Always look at the target
+      if (t < 1) requestAnimationFrame(animate); // Continue animation
     };
     animate();
   }, [zoomTarget]);
@@ -75,8 +75,9 @@ const BuildingScene = () => {
           const rect = renderer.domElement.getBoundingClientRect();
           const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
           const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-          const raycaster = new THREE.Raycaster();
-          raycaster.setFromCamera(new THREE.Vector2(x, y), cameraRef.current);
+          const raycaster = new THREE.Raycaster(); // Create a raycaster
+          raycaster.setFromCamera(new THREE.Vector2(x, y), cameraRef.current); // Set ray from camera and mouse
+          // Intersect with ground plane (y=0)
           const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
           const point = new THREE.Vector3();
           raycaster.ray.intersectPlane(plane, point);
@@ -122,7 +123,7 @@ const BuildingScene = () => {
         {/* Show marker and label if a point is clicked */}
         {clickedPoint && (
           <>
-            <mesh
+            <mesh // Marker at clicked point
               position={[clickedPoint.x, clickedPoint.y + 0.1, clickedPoint.z]}
             >
               <sphereGeometry args={[0.02, 4, 4]} />
@@ -132,7 +133,7 @@ const BuildingScene = () => {
             <group
               position={[clickedPoint.x, clickedPoint.y + 0.25, clickedPoint.z]}
             >
-              <Html
+              <Html // Label for clicked point
                 center
                 style={{
                   background: "#fff",
