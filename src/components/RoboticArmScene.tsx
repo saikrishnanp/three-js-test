@@ -72,7 +72,7 @@ export default function RoboticArmScene() {
   });
 
   return (
-    <div style={{ width: '100vw', height: '100vh' }}>
+    <div style={{ width: '100%', height: 'calc(100% - 100px)' }}>
       <Canvas camera={{ position: [5, 5, 8], fov: 50 }} style={{ background: '#f4f7fa' }}>
         <ambientLight intensity={0.7} />
         <directionalLight position={[5, 10, 5]} intensity={0.7} />
