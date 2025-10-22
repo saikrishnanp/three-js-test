@@ -1,6 +1,6 @@
 import RoboticArmScene from "./components/RoboticArmScene";
 import BuildingScene from "./components/BuildingComponents/BuildingScene";
-import StlViewer from "./components/StlViewver";
+import ModelViewer from "./components/ModelViewer";
 import "./App.css";
 import { useState } from "react";
 
@@ -70,7 +70,7 @@ function App() {
       <div style={{ flex: 1, minWidth: 0, width: "100%", height: "100%" }}>
         {tab === "building" && <BuildingScene />}
         {tab === "robotic" && <RoboticArmScene />}
-        {tab === "model" && <StlViewer />}
+        {tab === "model" && <ModelViewer />}
         {tab === "" && (
           <div
             style={{
