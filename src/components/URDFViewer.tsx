@@ -13,17 +13,26 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 
 type Nullable<T> = T | null;
 
+const URDF_FILE_OPTIONS = [
+  { filePath: "/URDFs/T12/urdf/T12.URDF", packagePath: "/URDFs/T12" },
+  {
+    filePath: "/URDFs/TriATHLETE/urdf/TriATHLETE.URDF",
+    packagePath: "/URDFs/TriATHLETE",
+  },
+];
+
 export default function URDFViewer() {
   const [robot, setRobot] = useState<Nullable<THREE.Object3D>>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedURDF, setSelectedURDF] = useState(URDF_FILE_OPTIONS[0]);
 
   useEffect(() => {
     // ✅ Path to your URDF file
-    const urdfPath = "/T12/urdf/T12.URDF";
+    const urdfPath = selectedURDF.filePath;
 
     // ✅ Base directory where mesh paths resolve
     const loader = new URDFLoader();
-    loader.packages = "/T12/";
+    loader.packages = selectedURDF.packagePath;
 
     // ✅ Optional: custom mesh loader (only needed if your URDF uses .obj too)
     loader.loadMeshCb = (path, manager, onComplete) => {
@@ -79,7 +88,7 @@ export default function URDFViewer() {
 
         const size = box.getSize(new THREE.Vector3());
         const maxAxis = Math.max(size.x, size.y, size.z) || 1;
-        urdf.scale.setScalar((1 / maxAxis)); // scale to visible size
+        urdf.scale.setScalar(1 / maxAxis); // scale to visible size
 
         console.log("URDF bounding box:", new THREE.Box3().setFromObject(urdf));
         setRobot(urdf);
@@ -90,10 +99,26 @@ export default function URDFViewer() {
         setError("Failed to load URDF");
       }
     );
-  }, []);
+  }, [selectedURDF]);
 
   return (
     <div style={{ width: "100%", height: "100%", position: "relative" }}>
+      <select
+        style={{ position: "absolute", top: 10, left: 10, zIndex: 1 }}
+        value={selectedURDF.filePath}
+        onChange={(e) => {
+          const selected = URDF_FILE_OPTIONS.find(
+            (option) => option.filePath === e.target.value
+          );
+          if (selected) setSelectedURDF(selected);
+        }}
+      >
+        {URDF_FILE_OPTIONS.map((option) => (
+          <option key={option.filePath} value={option.filePath}>
+            {option.filePath.split("/").slice(-2).join("/")}
+          </option>
+        ))}
+      </select>
       <Canvas camera={{ position: [0, 0, 10], fov: 50 }}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[10, 20, 10]} intensity={1.2} />
