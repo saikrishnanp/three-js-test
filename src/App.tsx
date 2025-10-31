@@ -3,9 +3,10 @@ import BuildingScene from "./components/BuildingComponents/BuildingScene";
 import ModelViewer from "./components/ModelViewer";
 import "./App.css";
 import { useState } from "react";
+import URDFViewer from "./components/URDFViewer";
 
 function App() {
-  const [tab, setTab] = useState<"building" | "robotic" | "model" | "">("");
+  const [tab, setTab] = useState<"building" | "robotic" | "model" | "urdf" | "">("");
 
   return (
     <div
@@ -66,11 +67,28 @@ function App() {
         >
           Loading Model
         </button>
+        <button
+          style={{
+            padding: "12px 32px",
+            border: "none",
+            borderBottom:
+              tab === "urdf" ? "3px solid #1976d2" : "3px solid transparent",
+            background: "none",
+            fontWeight: tab === "urdf" ? "bold" : "normal",
+            cursor: "pointer",
+            outline: "none",
+          }}
+          onClick={() => setTab("urdf")}
+        >
+          URDF viewer
+        </button>
       </div>
-      <div style={{ flex: 1, minWidth: 0, width: "100%", height: "100%" }}>
+      <div style={{ flex: 1, minWidth: 0, width: "100vw", height: "100vh" }}>
+        {/* <VoxelPainter /> */}
         {tab === "building" && <BuildingScene />}
         {tab === "robotic" && <RoboticArmScene />}
         {tab === "model" && <ModelViewer />}
+        {tab === "urdf" && <URDFViewer />}
         {tab === "" && (
           <div
             style={{
