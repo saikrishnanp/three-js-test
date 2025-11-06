@@ -1,9 +1,11 @@
+import { useState } from "react";
+
 import RoboticArmScene from "./components/RoboticArmScene";
 import BuildingScene from "./components/BuildingComponents/BuildingScene";
 import ModelViewer from "./components/ModelViewer";
+import URDFViewer from "./components/URDFViewer/URDFViewer";
+
 import "./App.css";
-import { useState } from "react";
-import URDFViewer from "./components/URDFViewer";
 
 function App() {
   const [tab, setTab] = useState<"building" | "robotic" | "model" | "urdf" | "">("");
