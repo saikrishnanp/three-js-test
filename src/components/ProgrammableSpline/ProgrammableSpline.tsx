@@ -1,29 +1,40 @@
+import { v4 as uuidv4 } from "uuid";
 import React, { useState, useRef, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import {
+  Canvas,
+  useFrame,
+  useThree,
+  type ThreeEvent,
+} from "@react-three/fiber";
 import { OrbitControls, Line, PerspectiveCamera } from "@react-three/drei";
 import * as THREE from "three";
 
-type Mode = "idle" | "picking" | "animating";
-type SpaceMode = "2d" | "3d"; // NEW: spline creation mode
+type Mode = "idle" | "picking" | "animating" | "editing";
+type SpaceMode = "2d" | "3d";
+type PointData = { id: string; position: THREE.Vector3 };
 
 export const RobotSplineSimulator: React.FC = () => {
   const [mode, setMode] = useState<Mode>("idle");
   const [spaceMode, setSpaceMode] = useState<SpaceMode>("3d");
-  const [points, setPoints] = useState<THREE.Vector3[]>([]);
-  const [splineCurve, setSplineCurve] = useState<THREE.CatmullRomCurve3 | null>(null);
+  const [points, setPoints] = useState<PointData[]>([]);
+  const [splineCurve, setSplineCurve] = useState<THREE.CatmullRomCurve3 | null>(
+    null
+  );
   const [startAnimation, setStartAnimation] = useState(false);
 
   useEffect(() => {
     if (points.length > 1) {
-      const curve = new THREE.CatmullRomCurve3(points, false, "catmullrom", 0.1);
+      const curve = new THREE.CatmullRomCurve3(
+        points.map((p) => p.position.clone()),
+        false,
+        "catmullrom",
+        0.1
+      );
       setSplineCurve(curve);
-    } else {
-      setSplineCurve(null);
-    }
+    } else setSplineCurve(null);
   }, [points]);
 
   const handleMoveClick = () => {
-    console.log({splineCurve})
     if (splineCurve) {
       setMode("animating");
       setStartAnimation(true);
@@ -51,7 +62,7 @@ export const RobotSplineSimulator: React.FC = () => {
         />
       </Canvas>
 
-      {/* --- UI CONTROLS --- */}
+      {/* --- UI Controls --- */}
       <div
         style={{
           position: "fixed",
@@ -63,7 +74,7 @@ export const RobotSplineSimulator: React.FC = () => {
           gap: "8px",
         }}
       >
-        {/* Toggle Picking */}
+        {/* Start / Stop Picking */}
         <button
           onClick={() =>
             setMode((prev) => (prev === "picking" ? "idle" : "picking"))
@@ -80,11 +91,28 @@ export const RobotSplineSimulator: React.FC = () => {
           {mode === "picking" ? "Stop Picking" : "Start Picking"}
         </button>
 
-        {/* Toggle 2D / 3D */}
+        {/* Edit (Delete) Mode */}
+        {points.length > 0 && (
+          <button
+            onClick={() =>
+              setMode((prev) => (prev === "editing" ? "idle" : "editing"))
+            }
+            style={{
+              background: mode === "editing" ? "#e67e22" : "#555",
+              color: "white",
+              padding: "6px 10px",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+            }}
+          >
+            {mode === "editing" ? "Stop Editing" : "Edit Picking"}
+          </button>
+        )}
+
+        {/* 2D/3D toggle */}
         <button
-          onClick={() =>
-            setSpaceMode((prev) => (prev === "2d" ? "3d" : "2d"))
-          }
+          onClick={() => setSpaceMode((prev) => (prev === "2d" ? "3d" : "2d"))}
           style={{
             background: spaceMode === "2d" ? "#f39c12" : "#2980b9",
             color: "white",
@@ -97,7 +125,7 @@ export const RobotSplineSimulator: React.FC = () => {
           {spaceMode === "2d" ? "Switch to 3D Mode" : "Switch to 2D Mode"}
         </button>
 
-        {/* Move */}
+        {/* Move / Animate */}
         <button
           onClick={handleMoveClick}
           disabled={!splineCurve}
@@ -139,8 +167,8 @@ interface SceneProps {
   mode: Mode;
   spaceMode: SpaceMode;
   splineCurve: THREE.CatmullRomCurve3 | null;
-  points: THREE.Vector3[];
-  setPoints: React.Dispatch<React.SetStateAction<THREE.Vector3[]>>;
+  points: PointData[];
+  setPoints: React.Dispatch<React.SetStateAction<PointData[]>>;
   startAnimation: boolean;
   onAnimationComplete: () => void;
 }
@@ -156,49 +184,46 @@ const Scene: React.FC<SceneProps> = ({
 }) => {
   const planeRef = useRef<THREE.Mesh>(null);
   const { camera, gl } = useThree();
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const handleCanvasClick = (event: THREE.Event) => {
+  // Handle adding points
+  const handleAddPoint = (e: ThreeEvent<MouseEvent>) => {
     if (mode !== "picking") return;
+    e.stopPropagation();
 
-    const mouseEvent = event as unknown as MouseEvent;
-    const raycaster = new THREE.Raycaster();
+    const rect = gl.domElement.getBoundingClientRect();
     const mouse = new THREE.Vector2(
-      (mouseEvent.offsetX / gl.domElement.clientWidth) * 2 - 1,
-      -(mouseEvent.offsetY / gl.domElement.clientHeight) * 2 + 1
+      ((e.clientX - rect.left) / rect.width) * 2 - 1,
+      -((e.clientY - rect.top) / rect.height) * 2 + 1
     );
 
+    const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
 
     if (spaceMode === "2d" && planeRef.current) {
-      // 2D mode: intersect with ground plane
-      const intersects = raycaster.intersectObject(planeRef.current);
-      if (intersects.length > 0) {
-        const point = intersects[0].point.clone();
-        setPoints((prev) => [...prev, point]);
+      const hits = raycaster.intersectObject(planeRef.current);
+      if (hits.length > 0) {
+        const hit = hits[0].point.clone();
+        setPoints((prev) => [...prev, { id: uuidv4(), position: hit }]);
       }
-    } else {
-      // 3D mode: project into 3D space
-      const depthDistance = 3; // depth from camera
-      const direction = raycaster.ray.direction.clone().normalize();
-      const origin = raycaster.ray.origin.clone();
-      const point = origin.add(direction.multiplyScalar(depthDistance));
-      setPoints((prev) => [...prev, point]);
+    } else if (spaceMode === "3d") {
+      const dist = 3;
+      const dir = raycaster.ray.direction.clone().normalize();
+      const pos = raycaster.ray.origin.clone().add(dir.multiplyScalar(dist));
+      setPoints((prev) => [...prev, { id: uuidv4(), position: pos }]);
     }
   };
 
   return (
-    <group onClick={handleCanvasClick}>
+    <group onClick={handleAddPoint}>
       <color attach="background" args={["#0f0f0f"]} />
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 10, 5]} intensity={1.2} />
       <PerspectiveCamera makeDefault position={[3, 3, 3]} />
       <OrbitControls />
-
-      {/* Subtle axes for both modes */}
       <axesHelper args={[1.5]} />
       <gridHelper args={[10, 10, "#333", "#222"]} position={[0, -0.001, 0]} />
 
-      {/* Plane visible only in 2D mode */}
       {spaceMode === "2d" && (
         <mesh
           ref={planeRef}
@@ -211,7 +236,7 @@ const Scene: React.FC<SceneProps> = ({
         </mesh>
       )}
 
-      {/* Cylinder Object */}
+      {/* Movable cylinder following spline */}
       <MovableCylinder
         spline={splineCurve}
         startAnimation={startAnimation}
@@ -219,20 +244,42 @@ const Scene: React.FC<SceneProps> = ({
       />
 
       {/* Control Points */}
-      {points.map((p, i) => (
-        <mesh key={i} position={p}>
-          <sphereGeometry args={[0.05]} />
-          <meshStandardMaterial color="orange" />
+      {points.map((p) => (
+        <mesh
+          key={p.id}
+          position={p.position}
+          onPointerOver={(e) => {
+            e.stopPropagation();
+            setHoveredId(p.id);
+          }}
+          onPointerOut={(e) => {
+            e.stopPropagation();
+            setHoveredId((prev) => (prev === p.id ? null : prev));
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (mode === "editing") {
+              // delete mode
+              setPoints((prev) => prev.filter((pt) => pt.id !== p.id));
+            }
+          }}
+        >
+          <sphereGeometry args={[0.07]} />
+          <meshStandardMaterial
+            color={
+              hoveredId === p.id
+                ? mode === "editing"
+                  ? "#ff4444"
+                  : "#ff9900"
+                : "orange"
+            }
+          />
         </mesh>
       ))}
 
-      {/* Spline Path */}
+      {/* Draw Spline */}
       {splineCurve && (
-        <Line
-          points={splineCurve.getPoints(100)}
-          color="cyan"
-          lineWidth={2}
-        />
+        <Line points={splineCurve.getPoints(100)} color="cyan" lineWidth={2} />
       )}
     </group>
   );
