@@ -4,11 +4,12 @@ import RoboticArmScene from "./components/RoboticArmScene";
 import BuildingScene from "./components/BuildingComponents/BuildingScene";
 import ModelViewer from "./components/ModelViewer";
 import URDFViewer from "./components/URDFViewer/URDFViewer";
+import ProgrammableSpline from "./components/ProgrammableSpline/ProgrammableSpline";
 
 import "./App.css";
 
 function App() {
-  const [tab, setTab] = useState<"building" | "robotic" | "model" | "urdf" | "">("");
+  const [tab, setTab] = useState<"building" | "robotic" | "model" | "urdf" | "programmable-spline" | "">("");
 
   return (
     <div
@@ -84,6 +85,21 @@ function App() {
         >
           URDF viewer
         </button>
+        <button
+          style={{
+            padding: "12px 32px",
+            border: "none",
+            borderBottom:
+              tab === "programmable-spline" ? "3px solid #1976d2" : "3px solid transparent",
+            background: "none",
+            fontWeight: tab === "programmable-spline" ? "bold" : "normal",
+            cursor: "pointer",
+            outline: "none",
+          }}
+          onClick={() => setTab("programmable-spline")}
+        >
+          Programmable spline
+        </button>
       </div>
       <div style={{ flex: 1, minWidth: 0, width: "100vw", height: "100vh" }}>
         {/* <VoxelPainter /> */}
@@ -91,6 +107,7 @@ function App() {
         {tab === "robotic" && <RoboticArmScene />}
         {tab === "model" && <ModelViewer />}
         {tab === "urdf" && <URDFViewer />}
+        {tab === "programmable-spline" && <ProgrammableSpline />}
         {tab === "" && (
           <div
             style={{
