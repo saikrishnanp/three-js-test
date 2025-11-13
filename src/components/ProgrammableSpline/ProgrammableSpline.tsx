@@ -49,7 +49,7 @@ export const RobotSplineSimulator: React.FC = () => {
   };
 
   return (
-    <div style={{ height: "100vh", width: "100vw" }}>
+    <div style={{ height: "calc(100vh - 50px)", width: "calc(100vw - 20px)" }}>
       <Canvas>
         <Scene
           mode={mode}
