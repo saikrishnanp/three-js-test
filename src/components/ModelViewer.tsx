@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import {
   OrbitControls,
@@ -96,14 +96,13 @@ function GlyphCloud({ count = 500 }: { count?: number }) {
     return arr;
   }, [count]);
 
-  useFrame(({ clock }) => {
+  useEffect(() => {
     if (!meshRef.current) return;
-    const t = clock.getElapsedTime();
     positions.forEach((p, i) => {
       dummy.position.set(
-        p.x + Math.sin(t + i) * 0.2,
-        p.y + Math.cos(t + i * 1.2) * 0.2,
-        p.z + Math.sin(t * 0.8 + i * 0.5) * 0.2
+        p.x + Math.sin(i) * 0.2,
+        p.y + Math.cos(i * 1.2) * 0.2,
+        p.z + Math.sin(i * 0.5) * 0.2
       );
       dummy.updateMatrix();
       meshRef.current!.setMatrixAt(i, dummy.matrix);
