@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from "react";
+import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh';
 import { Canvas } from "@react-three/fiber";
 import type { ThreeEvent } from "@react-three/fiber";
 import {
@@ -16,6 +17,8 @@ import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
 
 type Nullable<T> = T | null;
 type Mode = "view" | "raytrace" | "glyph";
+
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
 
 /* ------------------ MODEL MESH ------------------ */
 function ModelMesh({
@@ -203,6 +206,7 @@ export default function ModelViewer() {
         const maxAxis = Math.max(size.x, size.y, size.z);
         geom.scale(20 / maxAxis, 20 / maxAxis, 20 / maxAxis);
       }
+      geom.boundsTree = new MeshBVH(geom);
       setGeometry(geom);
       setObject(null);
     };
@@ -280,7 +284,15 @@ export default function ModelViewer() {
       <Canvas camera={{ position: [0, 0, 80], fov: 10 }}>
         <ambientLight intensity={0.6} />
         <directionalLight position={[10, 20, 10]} intensity={1.2} />
-        <OrbitControls makeDefault />
+        <OrbitControls
+          makeDefault
+          enableDamping
+          dampingFactor={0.05}
+          rotateSpeed={0.5}
+          zoomSpeed={0.5}
+          panSpeed={0.5}
+          enablePan={false}
+        />
 
         {geometry ? (
           <ModelMesh geometry={geometry} onMeshClick={handleMeshClick} />
